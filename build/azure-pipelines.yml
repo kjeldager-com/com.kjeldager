@@ -1,0 +1,97 @@
+# ASP.NET Core
+# Build and test ASP.NET Core projects targeting .NET Core.
+# Add steps that run tests, create a NuGet package, deploy, and more:
+# https://docs.microsoft.com/azure/devops/pipelines/languages/dotnet-core
+
+name: '$(date:yyyyMMdd)$(rev:-rr)'
+trigger:
+  batch: true
+  branches:
+    include:
+    - master
+    - dev
+
+
+pr:
+  branches:
+    include:
+    - master
+    - dev
+    - releases/*
+
+stages:
+- stage: BuildFrontend
+  displayName: Building Frontend
+  dependsOn: []
+  jobs:
+  - job: Build
+    pool:
+      vmImage: 'windows-2019'
+
+
+    variables:
+      buildConfiguration: 'Release'
+      srcPath: '.'
+
+
+    steps:
+    - task: JsonPathExtractToVariableTask@1
+      displayName: 'Extracting $.name to libName'
+      inputs:
+        JsonFile: '$(srcPath)/package.json'
+        JsonPathFilter: '$.name'
+        VariableName: libName
+
+    - task: JsonPathExtractToVariableTask@1
+      displayName: 'Extracting $.version to libversion'
+      inputs:
+        JsonFile: '$(srcPath)/package.json' 
+        JsonPathFilter: '$.version' 
+        VariableName: libversion
+
+    - task: SemVerUtilityTask@1
+      displayName: 'Updating variable libversion'
+      inputs:
+        SemVer: '$(libversion)'
+        StripPrereleases: true
+        VariableName: libversion
+        FixHyphen: true 
+
+    - task: Npm@1
+      displayName: 'npm install'
+      inputs:
+        workingDir: '$(srcPath)'
+        verbose: false
+
+    - script: npx nuxt-ts generate
+      workingDirectory: '$(srcPath)'
+
+    - task: VSTSBuildInfoTask@1
+      displayName: 'Creating Build Artifact'
+      inputs:
+        OutPutFileName: '$(Build.SourcesDirectory)/$(srcPath)/dist/buildinfo.json'
+        FeatureRegexPattern: '[^/]+(?=/$|$)'
+        FeatureVariableName: ciname
+        PullRequestSourceBranch: '$(System.PullRequest.SourceBranch)'
+    - task: CopyFiles@2
+      displayName: 'Copy Files to: $(build.artifactstagingdirectory)'
+      inputs:
+        SourceFolder: '$(srcPath)'
+        Contents: |
+         dist/**
+         package.json
+        TargetFolder: '$(build.artifactstagingdirectory)'
+
+    - task: AzureBlobFileCopy@2
+      displayName: 'Uploading to DotNETDevOps CDN'
+      inputs:
+        Source: '$(srcPath)\dist\*'
+        ConnectedServiceName: 'Microsoft Partner Network (0fd7128b-5305-49da-a400-b7a37feb271c)'
+        storage: '/subscriptions/0fd7128b-5305-49da-a400-b7a37feb271c/resourceGroups/kjeldager/providers/Microsoft.Storage/storageAccounts/kjeldager'
+        container: libs
+        CacheControl: 'max-age=31557600' 
+        prefix: '$(libName)/$(libversion)-$(ciname)-$(Build.BuildNumber)/'
+
+
+
+
