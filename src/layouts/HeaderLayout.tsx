@@ -21,7 +21,7 @@ export default class HeaderLayout extends tsx.Component<HeaderLayoutOptions>{
         return (
             <div data-animation="default" data-duration="400" class="navbar w-nav no-print" style={ { backgroundColor: this.backgroundColor, 'will-change':'background' } }>
                 <a href="/" class="brand w-nav-brand w--current">
-                    <img src="./kjeldagerlogo.PNG" width="188" alt="" />
+                    <img src="./kjeldagerlogo.png" width="188" alt="" />
                 </a>
                 <nav role="navigation" class="nav-menu w-nav-menu">
                     {this.$slots.links}
