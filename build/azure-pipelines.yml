@@ -83,10 +83,10 @@ stages:
         TargetFolder: '$(build.artifactstagingdirectory)'
 
     - task: AzureBlobFileCopy@2
-      displayName: 'Uploading to DotNETDevOps CDN'
+      displayName: 'Uploading to kjeldager CDN'
       inputs:
         Source: '$(srcPath)\dist\*'
-        ConnectedServiceName: 'Microsoft Partner Network (0fd7128b-5305-49da-a400-b7a37feb271c)'
+        ConnectedServiceName: 'azure'
         storage: '/subscriptions/0fd7128b-5305-49da-a400-b7a37feb271c/resourceGroups/kjeldager/providers/Microsoft.Storage/storageAccounts/kjeldager'
         container: libs
         CacheControl: 'max-age=31557600' 
